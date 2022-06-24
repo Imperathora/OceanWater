@@ -28,3 +28,11 @@ DerivedDataCache/*
 
 # Ignore Developers folder
 Content/Developers/*
+
+#VS files
+.vs/
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
