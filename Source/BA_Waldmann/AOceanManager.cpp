@@ -185,6 +185,59 @@ void AAOceanManager::FFT(TArray<float> fcInput, TArray<float> fcOutput, int step
 
 }
 
+FVector AAOceanManager::GenerateGerstnerWave(FVector position, FVector direction, float rotationAngle, float amplitude, float steepness, float speed, float waveDistance, float gravConstant, float time)
+{
+	FVector _direction = FVector(direction.X, direction.Y, 0);
+	_direction = _direction.RotateAngleAxis(rotationAngle * 360, FVector(0, 0, 1));
+
+	FVector2D _direction2D = FVector2D(_direction.X, _direction.Y);
+	_direction2D.Normalize();
+
+	FVector2D _position = FVector2D(position.X, position.Y);
+
+	//check for steepness value and set accordingly if out of bounds
+	if (steepness > 1)
+		steepness = 1;
+	else if (steepness < 0)
+		steepness = 0;
+
+	float waveSpeed = speed * (2 / waveDistance);
+
+	float waveLength = CalculateWaveLength(gravConstant, waveDistance);
+
+	float wavePhase = waveLength * waveSpeed * time;
+
+	float Qi = (waveLength * amplitude) / steepness;
+	float QA = Qi * steepness;
+
+	float wDot = FVector2D::DotProduct(_direction2D * (gravConstant / 2 * PI), _position) + wavePhase;
+
+	float cos = FMath::Cos(wDot);
+	float sin = FMath::Sin(wDot);
+
+	return FVector(_position.X + (_direction2D.X * QA * cos), _position.Y + (_direction2D.Y * QA * cos), sin * amplitude);
+}
+
+FVector AAOceanManager::GenerateGerstnerWaveSet(FVector position, FVector direction, float rotationAngle, float amplitude, float steepness, float speed, float waveDistance, float gravConstant, float time)
+{
+	FVector gerstnerWaves = FVector(0, 0, 0);
+
+	gerstnerWaves += GenerateGerstnerWave(position, direction, rotationAngle, amplitude, steepness, speed, waveDistance, gravConstant, time);
+	gerstnerWaves += GenerateGerstnerWave(position, direction, rotationAngle - 0.1f, amplitude * 0.8f, steepness * 0.8f, speed * 0.8f, waveDistance * 0.8f, gravConstant, time);
+	gerstnerWaves += GenerateGerstnerWave(position, direction, rotationAngle + 0.05f, amplitude * 1.2f, steepness * 1.2f, speed * 1.2f, waveDistance * 1.2f, gravConstant, time);
+	gerstnerWaves += GenerateGerstnerWave(position, direction, rotationAngle + 0.1f, amplitude * 1.5f, steepness * 1.5f, speed * 1.5f, waveDistance * 1.5f, gravConstant, time);
+	gerstnerWaves += GenerateGerstnerWave(position, direction, rotationAngle + 0.075f, amplitude * 0.1f, steepness * 0.1f, speed * 0.1f, waveDistance * 0.1f, gravConstant, time);
+	gerstnerWaves += GenerateGerstnerWave(position, direction, rotationAngle - 0.12f, amplitude * 0.6f, steepness * 0.6f, speed * 0.6f, waveDistance * 0.6f, gravConstant, time);
+
+	return gerstnerWaves / 6;
+}
+
+float AAOceanManager::CalculateWaveLength(float gravConstant, float waveDistance)
+{
+	float waveLength = sqrt(gravConstant * 2 * PI / waveDistance);
+	return waveLength;
+}
+
 unsigned int AAOceanManager::reverseBits(unsigned int i, const int size)
 {
 	unsigned int reverse = 0;
